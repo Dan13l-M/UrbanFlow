@@ -417,3 +417,65 @@ tr:hover td { background: var(--bg-card); cursor: pointer; }
   .charts-grid { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Mapbox popup dark theme ─────────────────────── */
+.mapboxgl-popup-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  font-family: inherit;
+  font-size: 13px;
+}
+.mapboxgl-popup-tip {
+  border-top-color: var(--bg-card) !important;
+  border-bottom-color: var(--bg-card) !important;
+}
+.mapboxgl-popup-close-button {
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 8px;
+  background: transparent;
+}
+.mapboxgl-popup-close-button:hover {
+  color: var(--text-primary);
+  background: transparent;
+}
+.popup-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.popup-sub  { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.popup-status { font-size: 11px; font-weight: 600; }
+
+/* ── Destination marker (ping + package icon) ────── */
+.dest-marker {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+.dest-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(88, 166, 255, 0.35);
+  animation: dest-ping 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.dest-dot {
+  position: absolute;
+  inset: 7px;
+  background: #58a6ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.35);
+  transition: transform 0.15s;
+}
+.dest-marker:hover .dest-dot { transform: scale(1.15); }
+@keyframes dest-ping {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(2.6); opacity: 0;   }
+}
