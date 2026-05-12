@@ -2,10 +2,14 @@ require('dotenv').config();
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
+// Abre (o crea) la base de datos SQLite en el directorio raíz del proyecto.
+// WAL (Write-Ahead Logging) permite lecturas concurrentes mientras el motor GPS escribe.
 const db = new Database('./urbanflow.db');
 db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.pragma('foreign_keys = ON'); // Activa integridad referencial entre tablas
 
+// ── Esquema de la base de datos ──────────────────────────────────────────────
+// CREATE TABLE IF NOT EXISTS garantiza idempotencia: no falla si las tablas ya existen
 db.exec(`
   CREATE TABLE IF NOT EXISTS vehicles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +43,7 @@ db.exec(`
     delivered_at TEXT
   );
 
+  -- Posición GPS en tiempo real de cada repartidor; el motor GPS la actualiza cada 3 s
   CREATE TABLE IF NOT EXISTS driver_locations (
     driver_id INTEGER PRIMARY KEY REFERENCES drivers(id),
     lat REAL NOT NULL,
@@ -48,6 +53,9 @@ db.exec(`
     updated_at TEXT DEFAULT (datetime('now'))
   );
 
+  -- Almacena los puntos de la ruta de un pedido en tránsito.
+  -- path_json es un array GeoJSON de coordenadas [lng, lat].
+  -- current_step indica cuál punto de la ruta está alcanzando el vehículo actualmente.
   CREATE TABLE IF NOT EXISTS route_segments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     order_id INTEGER REFERENCES orders(id),
@@ -58,10 +66,20 @@ db.exec(`
   );
 `);
 
+// ── Datos iniciales (seed) ───────────────────────────────────────────────────
+
+/**
+ * Inserta datos de prueba en la base de datos si está vacía.
+ * Se ejecuta una sola vez al arrancar el servidor por primera vez.
+ * Crea 5 vehículos, 8 repartidores con ubicaciones GPS y 10 pedidos
+ * en distintos estados para demostrar el sistema desde el primer arranque.
+ */
 function seed() {
+  // Si ya hay vehículos registrados, los datos ya fueron insertados
   const count = db.prepare('SELECT COUNT(*) as n FROM vehicles').get();
   if (count.n > 0) return;
 
+  // Inserta vehículos con diferentes tipos y capacidades
   const insertVehicle = db.prepare(
     'INSERT INTO vehicles (type, capacity_kg, autonomy_km) VALUES (?,?,?)'
   );
@@ -71,21 +89,23 @@ function seed() {
   insertVehicle.run('BICYCLE', 15, 30);
   insertVehicle.run('VAN', 500, 300);
 
+  // Inserta repartidores en distintos turnos; algunos disponibles, otros no
   const insertDriver = db.prepare(
     'INSERT INTO drivers (name, shift, rating, is_available, vehicle_id) VALUES (?,?,?,?,?)'
   );
   const drivers = [
-    ['Carlos Mendoza', 'MORNING', 4.8, 1, 1],
-    ['Ana García', 'MORNING', 4.9, 1, 2],
-    ['Luis Torres', 'AFTERNOON', 4.7, 1, 3],
-    ['María López', 'AFTERNOON', 4.6, 1, 4],
-    ['Pedro Ramírez', 'NIGHT', 4.5, 1, 5],
-    ['Sofía Castro', 'MORNING', 4.9, 0, 1],
-    ['Diego Flores', 'AFTERNOON', 4.7, 0, 3],
-    ['Elena Vega', 'NIGHT', 4.8, 1, 2],
+    ['Carlos Mendoza', 'MORNING',   4.8, 1, 1],
+    ['Ana García',     'MORNING',   4.9, 1, 2],
+    ['Luis Torres',    'AFTERNOON', 4.7, 1, 3],
+    ['María López',    'AFTERNOON', 4.6, 1, 4],
+    ['Pedro Ramírez',  'NIGHT',     4.5, 1, 5],
+    ['Sofía Castro',   'MORNING',   4.9, 0, 1],
+    ['Diego Flores',   'AFTERNOON', 4.7, 0, 3],
+    ['Elena Vega',     'NIGHT',     4.8, 1, 2],
   ];
   drivers.forEach(d => insertDriver.run(...d));
 
+  // Inserta ubicaciones GPS iniciales en distintos puntos del centro de CDMX
   const insertLoc = db.prepare(
     'INSERT INTO driver_locations (driver_id, lat, lng) VALUES (?,?,?)'
   );
@@ -101,29 +121,42 @@ function seed() {
   ];
   locs.forEach(l => insertLoc.run(...l));
 
+  // Inserta pedidos en distintos estados para mostrar el sistema funcional desde el inicio
   const insertOrder = db.prepare(`
     INSERT INTO orders (priority, status, category, weight_kg, destination_lat, destination_lng, driver_id, vehicle_id, eta_minutes, assigned_at)
     VALUES (?,?,?,?,?,?,?,?,?,?)
   `);
 
-  insertOrder.run('FLASH', 'IN_TRANSIT', 'FOOD', 2.5, 19.4300, -99.1400, 6, 1, 15, datetime('now'));
-  insertOrder.run('STANDARD', 'IN_TRANSIT', 'DOCUMENTS', 0.5, 19.4150, -99.1550, 7, 3, 25, datetime('now'));
-  insertOrder.run('FLASH', 'IN_TRANSIT', 'ELECTRONICS', 3.0, 19.4480, -99.1180, null, null, 20, null);
-  insertOrder.run('STANDARD', 'IN_HUB', 'FOOD', 1.0, 19.4350, -99.1300, null, null, null, null);
-  insertOrder.run('SCHEDULED', 'IN_HUB', 'DOCUMENTS', 0.3, 19.4230, -99.1420, null, null, null, null);
-  insertOrder.run('FLASH', 'IN_HUB', 'ELECTRONICS', 5.0, 19.4410, -99.1350, null, null, null, null);
+  // Pedidos en tránsito (con conductor asignado)
+  insertOrder.run('FLASH',     'IN_TRANSIT', 'FOOD',        2.5, 19.4300, -99.1400, 6, 1, 15, datetime('now'));
+  insertOrder.run('STANDARD',  'IN_TRANSIT', 'DOCUMENTS',   0.5, 19.4150, -99.1550, 7, 3, 25, datetime('now'));
+  insertOrder.run('FLASH',     'IN_TRANSIT', 'ELECTRONICS', 3.0, 19.4480, -99.1180, null, null, 20, null);
 
+  // Pedidos en bodega esperando despacho
+  insertOrder.run('STANDARD',  'IN_HUB',    'FOOD',        1.0, 19.4350, -99.1300, null, null, null, null);
+  insertOrder.run('SCHEDULED', 'IN_HUB',    'DOCUMENTS',   0.3, 19.4230, -99.1420, null, null, null, null);
+  insertOrder.run('FLASH',     'IN_HUB',    'ELECTRONICS', 5.0, 19.4410, -99.1350, null, null, null, null);
+
+  // Pedidos ya entregados para poblar las gráficas de reportes
   const delivered = db.prepare(`
     INSERT INTO orders (priority, status, category, weight_kg, destination_lat, destination_lng, driver_id, vehicle_id, received_at, assigned_at, delivered_at)
     VALUES (?,?,?,?,?,?,?,?,datetime('now','-3 hours'),datetime('now','-2 hours'),datetime('now','-30 minutes'))
   `);
   delivered.run('STANDARD', 'DELIVERED', 'DOCUMENTS', 0.4, 19.4280, -99.1460, 1, 1);
-  delivered.run('FLASH', 'DELIVERED', 'FOOD', 1.5, 19.4390, -99.1310, 2, 2);
+  delivered.run('FLASH',    'DELIVERED', 'FOOD',      1.5, 19.4390, -99.1310, 2, 2);
 
-  insertOrder.run('STANDARD', 'COLLECTED', 'ELECTRONICS', 2.0, 19.4320, -99.1380, 3, 3, 30, datetime('now'));
-  insertOrder.run('SCHEDULED', 'COLLECTED', 'DOCUMENTS', 0.8, 19.4260, -99.1440, 4, 4, 40, datetime('now'));
+  // Pedidos recogidos (en camino al hub)
+  insertOrder.run('STANDARD',  'COLLECTED', 'ELECTRONICS', 2.0, 19.4320, -99.1380, 3, 3, 30, datetime('now'));
+  insertOrder.run('SCHEDULED', 'COLLECTED', 'DOCUMENTS',   0.8, 19.4260, -99.1440, 4, 4, 40, datetime('now'));
 }
 
+/**
+ * Función auxiliar para calcular fechas relativas usando SQLite.
+ * Se usa exclusivamente durante el seed para crear timestamps realistas.
+ *
+ * @param {string} expr - Expresión SQLite de fecha (ej: "now", "now,-2 hours")
+ * @returns {string} Fecha formateada como string SQLite
+ */
 function datetime(expr) {
   return db.prepare(`SELECT datetime('${expr}') as v`).get().v;
 }
