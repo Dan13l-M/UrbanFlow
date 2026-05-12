@@ -18,10 +18,7 @@ app.use(cors({ origin: 'http://localhost:' + (process.env.PORT || 3000) }));
 app.use(express.json({ limit: '10kb' }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 
-// Static files
-app.use(express.static('public'));
-
-// Serve HTML pages with injected Mapbox token
+// HTML routes with token injection (must be before express.static)
 const fs = require('fs');
 
 function injectToken(filename) {
@@ -37,6 +34,9 @@ app.get('/', injectToken('index.html'));
 app.get('/index.html', injectToken('index.html'));
 app.get('/admin.html', injectToken('admin.html'));
 app.get('/reports.html', injectToken('reports.html'));
+
+// Static files (after HTML routes so express.static doesn't intercept HTML)
+app.use(express.static('public'));
 
 // Auth login endpoint (no JWT required)
 app.post('/api/auth/login', (req, res) => {
