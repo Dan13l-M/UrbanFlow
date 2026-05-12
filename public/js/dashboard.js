@@ -44,9 +44,14 @@ let destinationMarkers = {};  // { orderId: mapboxgl.Marker }  — marcadores de
   setInterval(loadOrders, 10000);
 })();
 
-// Devuelve las cabeceras HTTP con el token JWT para peticiones autenticadas
 function authHeaders() {
   return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+}
+
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, { ...opts, headers: { ...authHeaders(), ...(opts.headers || {}) } });
+  if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); token = null; location.reload(); return null; }
+  return res;
 }
 
 // ── Mapa Mapbox ──────────────────────────────────────────────────────────────
@@ -107,8 +112,8 @@ async function loadOrders() {
   if (prio) url += 'priority=' + prio + '&';
   if (stat) url += 'status=' + stat;
 
-  const res = await fetch(url, { headers: authHeaders() });
-  if (!res.ok) return;
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
   allOrders = await res.json();
   renderOrders(allOrders);
   updateKPIs(allOrders);
@@ -185,8 +190,8 @@ function updateHeatmap(orders) {
  * y coloca sus marcadores en el mapa. Espera a que el mapa esté listo.
  */
 async function loadDrivers() {
-  const res = await fetch('/api/drivers', { headers: authHeaders() });
-  if (!res.ok) return;
+  const res = await apiFetch('/api/drivers');
+  if (!res || !res.ok) return;
   const drivers = await res.json();
 
   // Muestra cuántos repartidores están en ruta vs el total
@@ -361,9 +366,8 @@ function closeOverlay() {
 async function updateSelectedStatus() {
   if (!selectedOrderId) return;
   const status = document.getElementById('overlay-new-status').value;
-  await fetch('/api/orders/' + selectedOrderId + '/status', {
+  await apiFetch('/api/orders/' + selectedOrderId + '/status', {
     method: 'PATCH',
-    headers: authHeaders(),
     body: JSON.stringify({ status })
   });
   loadOrders();
@@ -404,9 +408,8 @@ async function submitNewOrder() {
 
   if (!valid) return;
 
-  await fetch('/api/orders', {
+  await apiFetch('/api/orders', {
     method: 'POST',
-    headers: authHeaders(),
     body: JSON.stringify({
       priority:        document.getElementById('new-priority').value,
       category:        document.getElementById('new-category').value,
@@ -433,7 +436,7 @@ async function autoDispatch() {
   btn.disabled = true;
   btn.textContent = 'Despachando...';
 
-  const res = await fetch('/api/dispatch/' + hub.id, { method: 'POST', headers: authHeaders() });
+  const res = await apiFetch('/api/dispatch/' + hub.id, { method: 'POST' });
   btn.disabled = false;
   btn.textContent = '⚡ Auto-despachar';
 

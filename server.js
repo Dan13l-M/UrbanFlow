@@ -74,7 +74,7 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   // El payload solo incluye el rol; el token se firma con JWT_SECRET del .env
-  const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
   res.json({ token });
 });
 

@@ -35,9 +35,14 @@ let vPage = 1, dPage = 1;        // Página actual de vehículos y repartidores
   await loadDrivers();
 })();
 
-// Devuelve las cabeceras HTTP con el token JWT para peticiones autenticadas
 function authHeaders() {
   return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+}
+
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, { ...opts, headers: { ...authHeaders(), ...(opts.headers || {}) } });
+  if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); token = null; location.reload(); return null; }
+  return res;
 }
 
 /**
@@ -58,7 +63,8 @@ function switchTab(tab) {
 
 // Carga todos los vehículos desde la API y actualiza la tabla
 async function loadVehicles() {
-  const res = await fetch('/api/vehicles', { headers: authHeaders() });
+  const res = await apiFetch('/api/vehicles');
+  if (!res || !res.ok) return;
   vehicles = await res.json();
   renderVehicles();
 }
@@ -111,7 +117,7 @@ function editVehicle(id) {
 // Elimina un vehículo tras confirmación y recarga la tabla
 async function deleteVehicle(id) {
   if (!confirm('¿Eliminar este vehículo?')) return;
-  await fetch('/api/vehicles/' + id, { method: 'DELETE', headers: authHeaders() });
+  await apiFetch('/api/vehicles/' + id, { method: 'DELETE' });
   await loadVehicles();
 }
 
@@ -139,9 +145,9 @@ async function submitVehicle() {
 
   // Si hay ID en el campo oculto es actualización (PUT), si no es creación (POST)
   if (id) {
-    await fetch('/api/vehicles/' + id, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
+    await apiFetch('/api/vehicles/' + id, { method: 'PUT', body: JSON.stringify(body) });
   } else {
-    await fetch('/api/vehicles', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+    await apiFetch('/api/vehicles', { method: 'POST', body: JSON.stringify(body) });
   }
   closeModal('modal-vehicle');
   await loadVehicles();
@@ -151,7 +157,8 @@ async function submitVehicle() {
 
 // Carga todos los repartidores desde la API, actualiza la tabla y el selector de vehículos
 async function loadDrivers() {
-  const res = await fetch('/api/drivers', { headers: authHeaders() });
+  const res = await apiFetch('/api/drivers');
+  if (!res || !res.ok) return;
   drivers = await res.json();
   renderDrivers();
   populateVehicleSelect();
@@ -214,7 +221,7 @@ function editDriver(id) {
 // Elimina un repartidor tras confirmación y recarga la tabla
 async function deleteDriver(id) {
   if (!confirm('¿Eliminar este repartidor?')) return;
-  await fetch('/api/drivers/' + id, { method: 'DELETE', headers: authHeaders() });
+  await apiFetch('/api/drivers/' + id, { method: 'DELETE' });
   await loadDrivers();
 }
 
@@ -237,9 +244,9 @@ async function submitDriver() {
 
   // Si hay ID en el campo oculto es actualización (PUT), si no es creación (POST)
   if (id) {
-    await fetch('/api/drivers/' + id, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
+    await apiFetch('/api/drivers/' + id, { method: 'PUT', body: JSON.stringify(body) });
   } else {
-    await fetch('/api/drivers', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+    await apiFetch('/api/drivers', { method: 'POST', body: JSON.stringify(body) });
   }
   closeModal('modal-driver');
   await loadDrivers();
