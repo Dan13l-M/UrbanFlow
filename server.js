@@ -21,6 +21,14 @@ app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 // Static files
 app.use(express.static('public'));
 
+// Serve index.html with injected Mapbox token
+app.get('/', (req, res) => {
+  const fs = require('fs');
+  let html = fs.readFileSync('./public/index.html', 'utf8');
+  html = html.replace('</head>', `<script>window.__MAPBOX_TOKEN__="${process.env.MAPBOX_TOKEN}"</script></head>`);
+  res.send(html);
+});
+
 // Auth login endpoint (no JWT required)
 app.post('/api/auth/login', (req, res) => {
   const { password } = req.body;
