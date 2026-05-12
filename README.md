@@ -89,7 +89,7 @@ El servidor mantiene una sala Socket.IO llamada `operators`. El cliente se une a
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/Dan13l-M/UrbanFlow.git
 cd UrbanFlow
 ```
 
