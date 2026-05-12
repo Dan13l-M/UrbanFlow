@@ -420,29 +420,31 @@ tr:hover td { background: var(--bg-card); cursor: pointer; }
 
 /* ── Mapbox popup dark theme ─────────────────────── */
 .mapboxgl-popup-content {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
   font-family: inherit;
   font-size: 13px;
 }
 .mapboxgl-popup-tip {
   border-top-color: var(--bg-card) !important;
   border-bottom-color: var(--bg-card) !important;
+  border-left-color: var(--bg-card) !important;
+  border-right-color: var(--bg-card) !important;
 }
 .mapboxgl-popup-close-button {
-  color: var(--text-muted);
+  color: var(--text-muted) !important;
   font-size: 18px;
   line-height: 1;
   padding: 4px 8px;
-  background: transparent;
+  background: transparent !important;
 }
 .mapboxgl-popup-close-button:hover {
-  color: var(--text-primary);
-  background: transparent;
+  color: var(--text-primary) !important;
+  background: transparent !important;
 }
 .popup-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
 .popup-sub  { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
@@ -457,25 +459,26 @@ tr:hover td { background: var(--bg-card); cursor: pointer; }
 }
 .dest-ping {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   border-radius: 50%;
-  background: rgba(88, 166, 255, 0.35);
-  animation: dest-ping 1.6s ease-out infinite;
+  background: rgba(88, 166, 255, 0.4);
+  animation: dest-ping 1.4s ease-out infinite;
   pointer-events: none;
 }
 .dest-dot {
   position: absolute;
-  inset: 7px;
+  top: 7px; right: 7px; bottom: 7px; left: 7px;
   background: #58a6ff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.35);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.4);
   transition: transform 0.15s;
 }
 .dest-marker:hover .dest-dot { transform: scale(1.15); }
 @keyframes dest-ping {
-  0%   { transform: scale(1);   opacity: 0.7; }
-  100% { transform: scale(2.6); opacity: 0;   }
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0.3; }
+  100% { transform: scale(2.8); opacity: 0;   }
 }
