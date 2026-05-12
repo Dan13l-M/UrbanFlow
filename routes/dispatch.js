@@ -9,11 +9,7 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const db = require('../db');
-const authenticate = require('../middleware/auth');
 const router = express.Router();
-
-// Aplica autenticación JWT a todas las rutas de este router
-router.use(authenticate);
 
 /**
  * Calcula la distancia en kilómetros entre dos coordenadas geográficas

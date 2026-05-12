@@ -9,11 +9,7 @@
  */
 const express = require('express');
 const db = require('../db');
-const authenticate = require('../middleware/auth');
 const router = express.Router();
-
-// Aplica autenticación JWT a todas las rutas de este router
-router.use(authenticate);
 
 // Lista todos los vehículos registrados en el sistema
 router.get('/', (req, res) => {

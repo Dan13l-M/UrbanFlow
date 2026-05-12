@@ -11,35 +11,15 @@
  *  - Exportación de datos a archivo CSV descargable
  */
 
-const TOKEN_KEY = 'uf_token';
-let token = localStorage.getItem(TOKEN_KEY);
 let reportData = [];    // Datos de productividad, usados también en exportCSV
 let etaChart, volumeChart; // Referencias a los charts para poder destruirlos al actualizar
 
 // ── Inicialización ───────────────────────────────────────────────────────────
 
-// Al cargar: autentica si no hay token, luego carga el selector y los reportes
 (async function init() {
-  if (!token) {
-    const pwd = prompt('Contraseña de acceso:');
-    if (!pwd) return;
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd })
-    });
-    if (!res.ok) { alert('Contraseña incorrecta'); return; }
-    token = (await res.json()).token;
-    localStorage.setItem(TOKEN_KEY, token);
-  }
   await loadDriverFilter();
   await loadReports();
 })();
-
-// Devuelve las cabeceras HTTP con el token JWT para peticiones autenticadas
-function authHeaders() {
-  return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-}
 
 // ── Filtros ──────────────────────────────────────────────────────────────────
 
@@ -48,7 +28,7 @@ function authHeaders() {
  * El selector siempre incluye la opción "Todos" al inicio.
  */
 async function loadDriverFilter() {
-  const res = await fetch('/api/drivers', { headers: authHeaders() });
+  const res = await fetch('/api/drivers');
   const drivers = await res.json();
   const sel = document.getElementById('rep-driver');
   drivers.forEach(d => {
@@ -80,8 +60,8 @@ async function loadReports() {
 
   // Las dos peticiones corren en paralelo con Promise.all para mayor rendimiento
   const [prodRes, volRes] = await Promise.all([
-    fetch(url, { headers: authHeaders() }),
-    fetch('/api/reports/eta', { headers: authHeaders() })
+    fetch(url),
+    fetch('/api/reports/eta')
   ]);
 
   reportData = await prodRes.json();

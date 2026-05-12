@@ -11,8 +11,6 @@
  *  - Panel lateral de detalles de pedido y formulario de nuevo pedido
  */
 
-const TOKEN_KEY = 'uf_token';
-let token = localStorage.getItem(TOKEN_KEY);
 let allOrders = [];       // Caché local de todos los pedidos cargados
 let selectedOrderId = null;
 let map;
@@ -21,21 +19,7 @@ let destinationMarkers = {};  // { orderId: mapboxgl.Marker }  — marcadores de
 
 // ── Inicialización ───────────────────────────────────────────────────────────
 
-// Al cargar la página: autentica si no hay token, luego arranca todos los módulos
-(async function init() {
-  if (!token) {
-    const pwd = prompt('Contraseña de acceso:');
-    if (!pwd) return;
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd })
-    });
-    if (!res.ok) { alert('Contraseña incorrecta'); return; }
-    const data = await res.json();
-    token = data.token;
-    localStorage.setItem(TOKEN_KEY, token);
-  }
+(function init() {
   initMap();
   loadOrders();
   loadDrivers();
@@ -44,14 +28,8 @@ let destinationMarkers = {};  // { orderId: mapboxgl.Marker }  — marcadores de
   setInterval(loadOrders, 10000);
 })();
 
-function authHeaders() {
-  return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-}
-
 async function apiFetch(url, opts = {}) {
-  const res = await fetch(url, { ...opts, headers: { ...authHeaders(), ...(opts.headers || {}) } });
-  if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); token = null; location.reload(); return null; }
-  return res;
+  return fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) } });
 }
 
 // ── Mapa Mapbox ──────────────────────────────────────────────────────────────

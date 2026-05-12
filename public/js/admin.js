@@ -9,40 +9,19 @@
  *  - Navegación por pestañas (Vehículos / Personal)
  */
 
-const TOKEN_KEY = 'uf_token';
-let token = localStorage.getItem(TOKEN_KEY);
 let vehicles = [], drivers = []; // Cachés locales de los datos cargados desde la API
 const PAGE_SIZE = 10;            // Registros visibles por página en las tablas
 let vPage = 1, dPage = 1;        // Página actual de vehículos y repartidores
 
 // ── Inicialización ───────────────────────────────────────────────────────────
 
-// Al cargar: autentica si no hay token y carga los datos de ambas tablas
 (async function init() {
-  if (!token) {
-    const pwd = prompt('Contraseña de acceso:');
-    if (!pwd) return;
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd })
-    });
-    if (!res.ok) { alert('Contraseña incorrecta'); return; }
-    token = (await res.json()).token;
-    localStorage.setItem(TOKEN_KEY, token);
-  }
   await loadVehicles();
   await loadDrivers();
 })();
 
-function authHeaders() {
-  return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-}
-
 async function apiFetch(url, opts = {}) {
-  const res = await fetch(url, { ...opts, headers: { ...authHeaders(), ...(opts.headers || {}) } });
-  if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); token = null; location.reload(); return null; }
-  return res;
+  return fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) } });
 }
 
 /**

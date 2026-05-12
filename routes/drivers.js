@@ -9,11 +9,7 @@
  */
 const express = require('express');
 const db = require('../db');
-const authenticate = require('../middleware/auth');
 const router = express.Router();
-
-// Aplica autenticación JWT a todas las rutas de este router
-router.use(authenticate);
 
 // Lista todos los repartidores con su vehículo asignado y posición GPS actual
 router.get('/', (req, res) => {

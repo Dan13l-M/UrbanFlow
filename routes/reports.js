@@ -7,11 +7,7 @@
  */
 const express = require('express');
 const db = require('../db');
-const authenticate = require('../middleware/auth');
 const router = express.Router();
-
-// Aplica autenticación JWT a todas las rutas de este router
-router.use(authenticate);
 
 /**
  * Estadísticas de productividad por repartidor.
