@@ -2,7 +2,7 @@ const TOKEN_KEY = 'uf_token';
 let token = localStorage.getItem(TOKEN_KEY);
 let allOrders = [];
 let selectedOrderId = null;
-let map, driversLayer = {};
+let map, driversLayer = {}, destinationMarkers = {};
 
 (async function init() {
   if (!token) {
@@ -57,6 +57,7 @@ function initMap() {
     });
 
     map.addSource('fleet-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    updateDestinationMarkers(allOrders);
   });
 }
 
@@ -73,6 +74,7 @@ async function loadOrders() {
   renderOrders(allOrders);
   updateKPIs(allOrders);
   updateHeatmap(allOrders);
+  updateDestinationMarkers(allOrders);
 }
 
 function renderOrders(orders) {
@@ -134,6 +136,7 @@ async function loadDrivers() {
 }
 
 function placeDriverMarkers(drivers) {
+  const vehicleEmoji = { BICYCLE: '🚲', MOTORCYCLE: '🏍', VAN: '🚐' };
   drivers.forEach(d => {
     if (!d.lat || !d.lng) return;
     const iconSrc = '/icons/' + (d.vehicle_type || 'motorcycle').toLowerCase() + '.svg';
@@ -143,9 +146,18 @@ function placeDriverMarkers(drivers) {
       const el = document.createElement('div');
       el.style.cssText = 'width:28px;height:28px;cursor:pointer';
       el.innerHTML = `<img src="${iconSrc}" width="28" height="28" title="${d.name}">`;
+      const emoji = vehicleEmoji[d.vehicle_type] || '🚗';
+      const statusColor = d.is_available ? 'var(--accent-green)' : 'var(--accent-yellow)';
+      const statusLabel = d.is_available ? 'Disponible' : 'En tránsito';
+      const popup = new mapboxgl.Popup({ offset: 20, closeButton: true })
+        .setHTML(`
+          <div class="popup-name">${d.name}</div>
+          <div class="popup-sub">${emoji} ${d.vehicle_type}</div>
+          <div class="popup-status" style="color:${statusColor}">${statusLabel}</div>
+        `);
       driversLayer[d.id] = new mapboxgl.Marker({ element: el })
         .setLngLat([d.lng, d.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(`<b>${d.name}</b><br>${d.vehicle_type}`))
+        .setPopup(popup)
         .addTo(map);
     }
   });
@@ -270,3 +282,35 @@ document.getElementById('filter-status').addEventListener('change', loadOrders);
 function labelPriority(p) { return { FLASH:'Flash', STANDARD:'Estándar', SCHEDULED:'Programado' }[p] || p; }
 function labelStatus(s) { return { IN_HUB:'En Hub', COLLECTED:'Recogido', IN_TRANSIT:'En Camino', DELIVERED:'Entregado' }[s] || s; }
 function labelCategory(c) { return { FOOD:'Alimentos', ELECTRONICS:'Electrónica', DOCUMENTS:'Documentos' }[c] || c; }
+
+const PKG_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+  <line x1="12" y1="22.08" x2="12" y2="12"/>
+</svg>`;
+
+function updateDestinationMarkers(orders) {
+  if (!map || !map.loaded()) return;
+
+  const activeIds = new Set(
+    orders.filter(o => o.status !== 'DELIVERED').map(o => o.id)
+  );
+
+  Object.keys(destinationMarkers).forEach(id => {
+    if (!activeIds.has(parseInt(id))) {
+      destinationMarkers[id].remove();
+      delete destinationMarkers[id];
+    }
+  });
+
+  orders.filter(o => o.status !== 'DELIVERED' && !destinationMarkers[o.id]).forEach(o => {
+    if (!o.destination_lat || !o.destination_lng) return;
+    const el = document.createElement('div');
+    el.className = 'dest-marker';
+    el.innerHTML = `<div class="dest-ping"></div><div class="dest-dot">${PKG_SVG}</div>`;
+    el.addEventListener('click', () => selectOrder(o.id));
+    destinationMarkers[o.id] = new mapboxgl.Marker({ element: el, anchor: 'center' })
+      .setLngLat([o.destination_lng, o.destination_lat])
+      .addTo(map);
+  });
+}
