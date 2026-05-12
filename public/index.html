@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrbanFlow — Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <header class="uf-header">
+    <div class="uf-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      UrbanFlow
+    </div>
+    <nav class="uf-nav">
+      <a href="/index.html" class="active">Dashboard</a>
+      <a href="/admin.html">Administración</a>
+      <a href="/reports.html">Reportes</a>
+    </nav>
+    <span class="badge-live">● LIVE</span>
+  </header>
+
+  <main class="uf-main">
+
+    <aside id="dispatch-panel">
+      <div class="panel-header">
+        <h2>Pedidos</h2>
+        <span id="orders-count" style="color: var(--text-muted); font-size:12px;">Cargando...</span>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Activos</div>
+          <div class="kpi-value blue" id="kpi-active">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Flash</div>
+          <div class="kpi-value red" id="kpi-flash">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">ETA Promedio</div>
+          <div class="kpi-value yellow" id="kpi-eta">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Cumplimiento</div>
+          <div class="kpi-value green" id="kpi-compliance">—</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <select class="filter-select" id="filter-priority">
+          <option value="">Prioridad</option>
+          <option value="FLASH">Flash</option>
+          <option value="STANDARD">Estándar</option>
+          <option value="SCHEDULED">Programado</option>
+        </select>
+        <select class="filter-select" id="filter-status">
+          <option value="">Estado</option>
+          <option value="IN_HUB">En Hub</option>
+          <option value="COLLECTED">Recogido</option>
+          <option value="IN_TRANSIT">En Camino</option>
+          <option value="DELIVERED">Entregado</option>
+        </select>
+      </div>
+
+      <div class="orders-list">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Peso</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody">
+            <tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn btn-primary" onclick="openNewOrderModal()">+ Nuevo Pedido</button>
+        <button class="btn btn-success" id="btn-dispatch" onclick="autoDispatch()">⚡ Auto-despachar</button>
+      </div>
+    </aside>
+
+    <section id="map-section">
+      <div id="map-urbanflow"></div>
+
+      <div id="order-overlay">
+        <div class="overlay-title">
+          <span id="overlay-id">Pedido #—</span>
+          <button onclick="closeOverlay()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;">×</button>
+        </div>
+        <div class="overlay-row"><span class="overlay-label">Categoría</span><span id="overlay-category">—</span></div>
+        <div class="overlay-row"><span class="overlay-label">Repartidor</span><span id="overlay-driver">—</span></div>
+        <div class="overlay-row"><span class="overlay-label">Estado</span><span id="overlay-status">—</span></div>
+        <div class="overlay-eta" id="overlay-eta">—</div>
+        <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:12px">minutos ETA</div>
+        <div style="display:flex;gap:8px">
+          <select class="filter-select" id="overlay-new-status">
+            <option value="IN_HUB">En Hub</option>
+            <option value="COLLECTED">Recogido</option>
+            <option value="IN_TRANSIT">En Camino</option>
+            <option value="DELIVERED">Entregado</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="updateSelectedStatus()">Cambiar</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="uf-footer">
+    <div class="footer-stat">Entregas hoy: <strong id="foot-delivered">0</strong></div>
+    <div class="footer-stat">Cumplimiento ETA: <strong id="foot-compliance">—</strong></div>
+    <div class="footer-stat">Flota activa: <strong id="foot-fleet">—</strong></div>
+    <div style="margin-left:auto;font-size:11px;">UrbanFlow v1.0 · CDMX</div>
+  </footer>
+
+  <div class="modal-backdrop" id="modal-new-order">
+    <div class="modal">
+      <div class="modal-title">Nuevo Pedido</div>
+      <div class="form-group">
+        <label>Prioridad</label>
+        <select class="form-control" id="new-priority">
+          <option value="FLASH">Flash</option>
+          <option value="STANDARD">Estándar</option>
+          <option value="SCHEDULED">Programado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select class="form-control" id="new-category">
+          <option value="FOOD">Alimentos</option>
+          <option value="ELECTRONICS">Electrónica</option>
+          <option value="DOCUMENTS">Documentos</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Peso (kg)</label>
+        <input type="number" class="form-control" id="new-weight" min="0.1" step="0.1" value="1.0">
+        <div class="form-error" id="err-weight">Ingresa un peso válido mayor a 0</div>
+      </div>
+      <div class="form-group">
+        <label>Latitud destino</label>
+        <input type="number" class="form-control" id="new-lat" step="0.0001" value="19.4326">
+        <div class="form-error" id="err-lat">Latitud inválida (-90 a 90)</div>
+      </div>
+      <div class="form-group">
+        <label>Longitud destino</label>
+        <input type="number" class="form-control" id="new-lng" step="0.0001" value="-99.1332">
+        <div class="form-error" id="err-lng">Longitud inválida (-180 a 180)</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-new-order')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitNewOrder()">Crear Pedido</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
