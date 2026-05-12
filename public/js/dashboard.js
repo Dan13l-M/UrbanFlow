@@ -2,7 +2,6 @@
  * dashboard.js — Lógica principal del panel de operaciones.
  *
  * Responsabilidades:
- *  - Autenticación con la API y almacenamiento del JWT en localStorage
  *  - Inicialización del mapa Mapbox con capa heatmap de demanda
  *  - Carga y renderizado de pedidos con filtros de prioridad y estado
  *  - Actualización de KPIs (tarjetas de métricas)

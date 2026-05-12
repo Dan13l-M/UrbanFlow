@@ -1,6 +1,5 @@
 /**
  * Rutas de gestión de pedidos.
- * Todas requieren token JWT válido (middleware authenticate).
  *
  * GET    /api/orders             - Lista pedidos con filtros opcionales
  * POST   /api/orders             - Crea un pedido nuevo en estado IN_HUB

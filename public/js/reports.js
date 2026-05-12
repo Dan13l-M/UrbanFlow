@@ -2,7 +2,6 @@
  * reports.js — Lógica del panel de reportes y estadísticas.
  *
  * Responsabilidades:
- *  - Autenticación con la API y almacenamiento del JWT en localStorage
  *  - Carga del selector de repartidores para filtrar reportes
  *  - Peticiones paralelas a /productivity y /eta para optimizar carga
  *  - Renderizado de tabla de productividad con cumplimiento ETA coloreado

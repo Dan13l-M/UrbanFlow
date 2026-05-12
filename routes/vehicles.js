@@ -1,6 +1,5 @@
 /**
  * Rutas de gestión de vehículos.
- * Todas requieren token JWT válido (middleware authenticate).
  *
  * GET  /api/vehicles        - Lista todos los vehículos
  * POST /api/vehicles        - Crea un vehículo nuevo

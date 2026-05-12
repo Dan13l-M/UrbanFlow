@@ -10,8 +10,6 @@ Sistema de gestión de flota urbana de última milla. Permite crear pedidos, asi
 UrbanFlow/
 ├── server.js              # Punto de entrada: Express + Socket.IO + motor GPS
 ├── db.js                  # Conexión SQLite, esquema DDL y datos iniciales
-├── middleware/
-│   └── auth.js            # Verificación de JWT (Bearer token)
 ├── routes/
 │   ├── orders.js          # CRUD de pedidos + cambio de estado
 │   ├── drivers.js         # CRUD de repartidores
@@ -35,7 +33,6 @@ UrbanFlow/
 | Capa | Responsabilidad |
 |------|----------------|
 | **Rutas** (`routes/`) | Controladores HTTP — validan entrada, ejecutan consultas, devuelven JSON |
-| **Middleware** (`middleware/`) | Autenticación JWT transversal a todas las rutas protegidas |
 | **Modelo** (`db.js`) | Esquema SQLite y seed de datos iniciales; expone la conexión sincrónica |
 | **Vista** (`public/`) | HTML + JS + CSS del cliente; consume la API REST y Socket.IO |
 
@@ -69,7 +66,6 @@ El servidor mantiene una sala Socket.IO llamada `operators`. El cliente se une a
 | **Node.js + Express** | 4.x | Servidor HTTP minimalista; ideal para APIs REST pequeñas sin overhead de frameworks grandes |
 | **better-sqlite3** | 9.x | SQLite sincrónico — elimina callbacks/promises en consultas DB, simplifica la lógica del motor GPS que corre en `setInterval` |
 | **Socket.IO** | 4.x | WebSocket con fallback automático a long-polling; sala `operators` permite broadcast selectivo sin mantener estado de sesión |
-| **jsonwebtoken** | 9.x | JWT stateless — el servidor no necesita almacenar sesiones; token expira en 8h |
 | **helmet** | 7.x | Cabeceras HTTP de seguridad (X-Frame-Options, HSTS, etc.) con un solo `use()` |
 | **express-rate-limit** | 7.x | Protege endpoints contra abuso; 300 req / 15 min por IP |
 | **cors** | 2.x | Restringe origen al mismo `localhost:PORT` |
@@ -119,8 +115,6 @@ Abre `.env` y completa los valores:
 
 ```env
 MAPBOX_TOKEN=pk.eyJ1...    # Token de Mapbox (público, empieza con pk.)
-JWT_SECRET=una_cadena_aleatoria_larga_de_al_menos_64_caracteres
-ADMIN_PASSWORD=admin123     # Contraseña para acceder al panel
 PORT=3000
 ```
 
@@ -154,10 +148,6 @@ Abre el navegador en `http://localhost:3000`.
 | `/` | Dashboard — mapa en vivo, KPIs, tabla de pedidos |
 | `/admin.html` | Administración de vehículos y repartidores |
 | `/reports.html` | Reportes de productividad con gráficas y exportación CSV |
-
-### Contraseña de acceso
-
-Al entrar a cualquier página por primera vez se solicita la contraseña definida en `ADMIN_PASSWORD` (por defecto `admin123`). El token JWT queda guardado en `localStorage` durante 8 horas.
 
 ### Flujo de prueba básico
 
@@ -196,6 +186,4 @@ route_segments  -- id, order_id, path_json, current_step
 | Variable | Descripción | Requerida |
 |---|---|---|
 | `MAPBOX_TOKEN` | Access token público de Mapbox | Sí |
-| `JWT_SECRET` | Secreto para firmar tokens JWT (mín. 32 chars) | Sí |
-| `ADMIN_PASSWORD` | Contraseña del panel de administración | Sí |
 | `PORT` | Puerto HTTP (default: 3000) | No |

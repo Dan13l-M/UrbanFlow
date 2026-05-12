@@ -1,6 +1,5 @@
 /**
  * Rutas de gestión de repartidores.
- * Todas requieren token JWT válido (middleware authenticate).
  *
  * GET    /api/drivers      - Lista repartidores con vehículo y ubicación GPS
  * POST   /api/drivers      - Crea un repartidor e inicializa su ubicación

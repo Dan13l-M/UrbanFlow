@@ -5,7 +5,6 @@ const { Server } = require('socket.io');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const jwt = require('jsonwebtoken');
 const db = require('./db');
 
 const app = express();
@@ -61,22 +60,6 @@ app.get('/reports.html', injectToken('reports.html'));
 
 // Archivos estáticos (CSS, JS, íconos); se registra después de las rutas HTML
 app.use(express.static('public'));
-
-// ── Autenticación ────────────────────────────────────────────────────────────
-
-// Endpoint de login: recibe la contraseña y devuelve un JWT con expiración de 8h
-// No aplica authenticate porque es el punto de entrada sin credenciales
-app.post('/api/auth/login', (req, res) => {
-  const { password } = req.body;
-
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Contraseña incorrecta' });
-  }
-
-  // El payload solo incluye el rol; el token se firma con JWT_SECRET del .env
-  const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token });
-});
 
 // ── Rutas de la API ──────────────────────────────────────────────────────────
 app.use('/api/orders',   require('./routes/orders'));

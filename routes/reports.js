@@ -1,6 +1,5 @@
 /**
  * Rutas de reportes y estadísticas.
- * Todas requieren token JWT válido (middleware authenticate).
  *
  * GET /api/reports/productivity  - Métricas de productividad por repartidor
  * GET /api/reports/eta           - Volumen de entregas por día (últimos 30 días)

@@ -1,6 +1,5 @@
 require('dotenv').config();
 const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
 
 // Abre (o crea) la base de datos SQLite en el directorio raíz del proyecto.
 // WAL (Write-Ahead Logging) permite lecturas concurrentes mientras el motor GPS escribe.

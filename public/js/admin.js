@@ -2,7 +2,6 @@
  * admin.js — Lógica del panel de administración de flota.
  *
  * Responsabilidades:
- *  - Autenticación con la API y almacenamiento del JWT en localStorage
  *  - Gestión CRUD de vehículos (listar, crear, editar, eliminar)
  *  - Gestión CRUD de repartidores (listar, crear, editar, eliminar)
  *  - Paginación de 10 registros por página en ambas tablas
