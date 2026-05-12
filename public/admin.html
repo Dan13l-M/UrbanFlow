@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrbanFlow — Administración</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="uf-header">
+    <div class="uf-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      UrbanFlow
+    </div>
+    <nav class="uf-nav">
+      <a href="/index.html">Dashboard</a>
+      <a href="/admin.html" class="active">Administración</a>
+      <a href="/reports.html">Reportes</a>
+    </nav>
+    <span style="color:var(--text-muted);font-size:12px;">Admin</span>
+  </header>
+
+  <main class="admin-main">
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('vehicles')">🚗 Vehículos</button>
+      <button class="tab-btn" onclick="switchTab('drivers')">👤 Personal</button>
+    </div>
+
+    <!-- Sección: Vehículos -->
+    <section id="tab-vehicles">
+      <div class="section-header">
+        <h2>Vehículos de la Flota</h2>
+        <button class="btn btn-primary" onclick="openVehicleModal()">+ Agregar Vehículo</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tipo</th>
+              <th>Capacidad (kg)</th>
+              <th>Autonomía (km)</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="vehicles-tbody">
+            <tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:20px">Cargando...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="vehicles-pagination"></div>
+      </div>
+    </section>
+
+    <!-- Sección: Personal -->
+    <section id="tab-drivers" style="display:none">
+      <div class="section-header">
+        <h2>Personal de Reparto</h2>
+        <button class="btn btn-primary" onclick="openDriverModal()">+ Agregar Repartidor</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Turno</th>
+              <th>Rating</th>
+              <th>Disponible</th>
+              <th>Vehículo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="drivers-tbody">
+            <tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:20px">Cargando...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="drivers-pagination"></div>
+      </div>
+    </section>
+
+    <!-- Sección: Protocolo de entrega -->
+    <section class="protocol-section">
+      <h3>Protocolo de Entrega</h3>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">
+        Proceso estándar para la recepción, verificación y entrega de paquetes.
+      </p>
+      <div class="protocol-media">
+        <span>[ Imagen o video del protocolo de entrega ]</span>
+      </div>
+      <ol style="margin-top:14px;color:var(--text-muted);font-size:13px;padding-left:20px;line-height:1.8">
+        <li>Verificar identidad del destinatario con INE o documento oficial.</li>
+        <li>Confirmar estado del paquete antes de la entrega.</li>
+        <li>Solicitar firma digital o fotografía como confirmación.</li>
+        <li>Actualizar estado en el sistema inmediatamente.</li>
+      </ol>
+    </section>
+
+  </main>
+
+  <!-- Modal: Vehículo -->
+  <div class="modal-backdrop" id="modal-vehicle">
+    <div class="modal">
+      <div class="modal-title" id="vehicle-modal-title">Agregar Vehículo</div>
+      <input type="hidden" id="vehicle-edit-id">
+      <div class="form-group">
+        <label>Tipo</label>
+        <select class="form-control" id="v-type">
+          <option value="BICYCLE">Bicicleta</option>
+          <option value="MOTORCYCLE">Motocicleta</option>
+          <option value="VAN">Camioneta</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Capacidad (kg)</label>
+        <input type="number" class="form-control" id="v-capacity" min="1" step="0.5" value="30">
+        <div class="form-error" id="err-v-capacity">Ingresa un valor válido</div>
+      </div>
+      <div class="form-group">
+        <label>Autonomía (km)</label>
+        <input type="number" class="form-control" id="v-autonomy" min="1" step="1" value="80">
+        <div class="form-error" id="err-v-autonomy">Ingresa un valor válido</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-vehicle')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitVehicle()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Repartidor -->
+  <div class="modal-backdrop" id="modal-driver">
+    <div class="modal">
+      <div class="modal-title" id="driver-modal-title">Agregar Repartidor</div>
+      <input type="hidden" id="driver-edit-id">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" class="form-control" id="d-name" placeholder="Nombre completo">
+        <div class="form-error" id="err-d-name">Nombre requerido</div>
+      </div>
+      <div class="form-group">
+        <label>Turno</label>
+        <select class="form-control" id="d-shift">
+          <option value="MORNING">Mañana</option>
+          <option value="AFTERNOON">Tarde</option>
+          <option value="NIGHT">Noche</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Vehículo asignado</label>
+        <select class="form-control" id="d-vehicle">
+          <option value="">Sin vehículo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Disponible</label>
+        <select class="form-control" id="d-available">
+          <option value="1">Sí</option>
+          <option value="0">No</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-driver')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitDriver()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>
